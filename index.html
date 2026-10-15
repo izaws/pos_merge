@@ -329,7 +329,8 @@ input.pf-lab.sec{background:none;border:0;border-bottom:1.5px dashed var(--ln);b
 #pvd{position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:16px}#pvd.on{display:flex}
 .pvd-b{position:relative;background:var(--bg);width:100%;max-width:560px;max-height:100%;overflow:auto;border-radius:24px;padding-bottom:18px}
 .pvd-x{position:absolute;right:12px;top:12px;width:32px;height:32px;border-radius:50%;border:0;background:rgba(0,0,0,.45);color:#fff;font-size:20px;line-height:1;padding:0;z-index:2}
-.pvd-im{height:min(46vh,400px);background:var(--chip) center/contain no-repeat;display:flex;align-items:center;justify-content:center;cursor:zoom-in;border-radius:24px 24px 0 0}
+.pvd-im{margin:18px 18px 0;height:min(40vh,340px);background:var(--chip);border-radius:16px;overflow:hidden;position:relative;touch-action:pan-y;cursor:zoom-in;user-select:none}.pvd-im.ph{display:flex;align-items:center;justify-content:center;cursor:default}
+.pvd-trk{display:flex;height:100%;transition:transform .32s cubic-bezier(.25,.8,.3,1)}.pvd-s{flex:0 0 100%;height:100%;background:center/contain no-repeat}
 .pvd-th{display:flex;gap:8px;overflow-x:auto;padding:10px 16px 0}.pvd-th i{flex:none;width:56px;height:56px;border-radius:10px;background:var(--chip) center/cover no-repeat;border:2px solid transparent;cursor:pointer}.pvd-th i.on{border-color:var(--ac)}
 .pvd-in{padding:16px 18px 0}.pvd-it{display:flex;align-items:center;gap:10px;padding:8px 0}
 .pvd-q{display:flex;align-items:center;gap:10px;flex:none}.pvd-q button{width:28px;height:28px;border-radius:50%;border:0;background:var(--ln);color:var(--tx);font-size:18px;line-height:1;padding:0}.pvd-q b{min-width:18px;text-align:center}
@@ -345,6 +346,12 @@ input[type=datetime-local]{display:block;min-width:0;max-width:100%;width:100%;b
 .pvs{margin-top:14px}.pvs-h,.pvs-r{display:grid;grid-template-columns:1fr 44px 76px;gap:8px;font-size:14px;padding:4px 0}.pvs-h{color:var(--sub);font-size:13px}.pvs-h span:nth-child(2),.pvs-r span:nth-child(2){text-align:center}.pvs-h span:last-child,.pvs-r span:last-child{text-align:right}
 .pvd-r{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.pvd-n{font-size:18px;min-width:0;word-break:break-all}
 .pf-grid.pv{padding:3px}
+@media(min-width:768px) and (min-height:600px){
+.mask{align-items:center;justify-content:center}
+.sheet{width:min(620px,calc(100% - 48px));border-radius:26px;max-height:86dvh;padding-bottom:18px}
+.tall,#co{height:min(86dvh,880px)}
+}
+@media(min-width:768px){.pf-fab{right:auto;left:calc(50% + 296px)}}
 </style></head><body>
 <div id="app">
 <div class="page on" id="p0"></div>
@@ -611,7 +618,7 @@ async function startSync(){
 async function initSB(){if(!SB_URL||!SB_KEY||!window.supabase){SYNERR=true;SYNMSG='Supabase 程式庫未載入';setSync();return}
 sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
 try{const {data}=await sb.auth.getSession();if(data.session){USER=data.session.user;await startSync()}else $('#login').classList.add('on')}catch(e){}
-sb.auth.onAuthStateChange((ev)=>{if(ev=='SIGNED_OUT'){USER=null;if(chan){sb.removeChannel(chan);chan=null}setSync();if(cur==3)r3()}});
+sb.auth.onAuthStateChange((ev)=>{if(ev=='SIGNED_OUT'){USER=null;if(chan){sb.removeChannel(chan);chan=null}setSync();if(cur==3)r3();$('#login').classList.add('on')}});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&USER){flush().then(()=>Promise.all([pull(),fetchRemotePending()]))}});
 window.addEventListener('online',()=>{if(USER){slog('偵測到恢復網路，重試待同步資料');flush().then(()=>Promise.all([pull(),fetchRemotePending()]))}});
 setInterval(()=>{if(cur===0&&(REMOTE_DONE.size||LOCAL_DONE.size)){completedProductIds();if(cur===0)r0()}if(USER&&!document.hidden&&navigator.onLine){if(Q.length)flush().then(()=>{pull();fetchRemotePending()});else if(!flushing)pull();fetchRemotePending()}},2000)}
@@ -621,7 +628,7 @@ try{const r=await sb.auth.signInWithPassword({email:e,password:p});
 if(r.error){m.style.color='var(--red)';m.textContent=r.error.message;return}
 if(!r.data.session){m.style.color='var(--red)';m.textContent='登入失敗，請確認帳號設定';return}
 USER=r.data.session.user;$('#login').classList.remove('on');startSync();if(cur==3)r3()}catch(x){m.style.color='var(--red)';m.textContent='連線失敗，請檢查網路'}}
-async function doLogout(){if(!await ask('確認登出？','確認','var(--ac)'))return;await sb.auth.signOut();USER=null;if(chan){sb.removeChannel(chan);chan=null}r3()}
+async function doLogout(){if(!await ask('確認登出？','確認','var(--ac)'))return;await sb.auth.signOut();USER=null;if(chan){sb.removeChannel(chan);chan=null}closeM();r3();loginOpen()}
 async function forceUp(){if(!await ask('確認用這台的資料覆蓋雲端？其他裝置同步後會變得和這台一樣。','覆蓋'))return;try{localStorage.setItem(KEY+'_j',USER.id)}catch(e){}qreset();toast('上傳中…')}
 async function forceDown(){if(!await ask('確認用雲端資料覆蓋這台？這台尚未上傳的資料會消失。','覆蓋'))return;Q=[];saveQ();let n=0;while(flushing&&n++<30)await new Promise(r=>setTimeout(r,300));await pull(true);toast(SYNERR?'下載失敗，請查看同步診斷':'已用雲端資料更新')}
 async function syncDiag(){toast('檢查中…');const L=[],ok=t=>L.push('✅ '+t),ng=t=>L.push('❌ '+t),wn=t=>L.push('⚠️ '+t);
@@ -915,13 +922,16 @@ async function pfTestSend(){const em=($('#pt_e').value||'').trim();if(!/^\S+@\S+
  catch(e){alertM('寄信失敗：'+errMsg(e))}
  finally{S.orders=S.orders.filter(x=>x.id!=id);lsave();qod(id);save()}}
 let MC=null;
-function mailCfgM(fm){MC={bank:S.pre.bank||'',days:S.pre.days||3,shop:S.pre.shop||'',sender:S.pre.sender||'',api:S.pre.api||''};ANI=1;TALL=1;openM(`<div class="sh row"><button class="p2" onclick="tplM(${fm?1:0})">取消</button><b style="font-size:17px">寄信資訊</b><button class="p2" style="background:var(--ac);color:#fff" onclick="mailCfgOk(${fm?1:0})">完成</button></div><div class="sbody"><div class="pf-card" style="padding:14px 16px">
+function mailEd(kind,fm){MC={bank:S.pre.bank||'',days:S.pre.days||3,shop:S.pre.shop||'',sender:S.pre.sender||'',api:S.pre.api||''};const inf=kind=='info';ANI=1;TALL=1;openM(`<div class="sh row"><button class="p2" onclick="${inf?`tplM(${fm?1:0})`:'closeM()'}">取消</button><b style="font-size:17px">${inf?'匯款與賣場':'寄信設定'}</b><button class="p2" style="background:var(--ac);color:#fff" onclick="mailCfgOk('${kind}',${fm?1:0})">完成</button></div><div class="sbody"><div class="pf-card" style="padding:14px 16px">${inf?`
  <label class="pf-f"><span>匯款資訊（寄給場取的客人）</span><textarea rows="3" placeholder="銀行（代碼）／帳號／戶名" oninput="MC.bank=this.value">${esc(MC.bank)}</textarea></label>
+ <label class="pf-f" style="margin:0"><span>賣場連結（好賣，通販用）</span><input placeholder="https://" autocapitalize="off" value="${esc(MC.shop)}" oninput="MC.shop=this.value"></label>`:`
  <label class="pf-f"><span>匯款期限（天）</span><input type="number" inputmode="numeric" placeholder="3" value="${esc(MC.days)}" oninput="MC.days=this.value"></label>
- <label class="pf-f"><span>賣場連結（好賣，通販用）</span><input placeholder="https://" autocapitalize="off" value="${esc(MC.shop)}" oninput="MC.shop=this.value"></label>
- <label class="pf-f"><span>寄件人名稱（信件顯示，預設用表單標題）</span><input value="${esc(MC.sender)}" oninput="MC.sender=this.value"></label>
- <label class="pf-f" style="margin:0"><span>後台網址（Apps Script 部署後的網址）</span><input placeholder="https://script.google.com/macros/s/…/exec" autocapitalize="off" value="${esc(MC.api)}" oninput="MC.api=this.value"></label></div></div>`)}
-function mailCfgOk(fm){const c=MC,api=String(c.api||'').trim();if(api&&!/^https:\/\/script\.google\.com\//.test(api))return toast('後台網址應該是 script.google.com 開頭');Object.assign(S.pre,{bank:String(c.bank||'').trim(),days:Math.max(1,Math.round(+c.days)||3),shop:String(c.shop||'').trim(),sender:String(c.sender||'').trim(),api,ts:Date.now()});S.pre.formUrl=pfLink();if(PRC)Object.assign(PRC,{bank:S.pre.bank,days:S.pre.days,shop:S.pre.shop,sender:S.pre.sender,api:S.pre.api});save();toast('已儲存');tplM(fm)}
+ <label class="pf-f"><span>寄件人名稱（預設用表單標題）</span><input value="${esc(MC.sender)}" oninput="MC.sender=this.value"></label>
+ <label class="pf-f" style="margin:0"><span>後台網址（Apps Script 部署後的網址）</span><input placeholder="https://script.google.com/macros/s/…/exec" autocapitalize="off" value="${esc(MC.api)}" oninput="MC.api=this.value"></label>`}</div></div>`)}
+const mailCfgM=()=>mailEd('set'),mailInfoM=fm=>mailEd('info',fm);
+function mailCfgOk(kind,fm){const c=MC,inf=kind=='info',api=String(c.api||'').trim();if(!inf&&api&&!/^https:\/\/script\.google\.com\//.test(api))return toast('後台網址應該是 script.google.com 開頭');
+ const v=inf?{bank:String(c.bank||'').trim(),shop:String(c.shop||'').trim()}:{days:Math.max(1,Math.round(+c.days)||3),sender:String(c.sender||'').trim(),api};
+ Object.assign(S.pre,v,{ts:Date.now()});S.pre.formUrl=pfLink();if(PRC)Object.assign(PRC,v);save();toast('已儲存');inf?tplM(fm):closeM()}
 function pfDeadlineCheck(){const d=S.pre.deadline;if(!S.pre.open||!d)return;const x=new Date(d).getTime();if(!x||Date.now()<x)return;S.pre.open=false;S.pre.ts=Date.now();save();toast('已到截止填單時間，表單已自動關閉');if(PRC&&$('#pfe').classList.contains('on'))pfEdit(1);if(cur==3)r3()}
 setInterval(pfDeadlineCheck,15000);setTimeout(pfDeadlineCheck,1500);
 /* 預覽表單（客人看到的樣子，不會真的送出） */
@@ -931,7 +941,7 @@ function pvField(b){const t=b.type,L=`<div class="pv-l">${esc(b.label||'')}${b.r
  if(t=='note')return `<div class="pv-tx">${esc(b.text||'')}</div>`;
  if(t=='divider')return '<div class="pf-hr"></div>';
  if(t=='image')return b.url?`<img class="pf-img" style="${pfImgSt(b)}" src="${esc(b.url)}" alt="">`:'';
- if(t=='products')return `<div class="pv-l">${esc(b.label||'')}<i>*</i></div>${b.text?`<div class="pv-tx" style="margin-bottom:8px">${esc(b.text)}</div>`:''}<div id="pvprod"></div>`;
+ if(t=='products')return `<div id="pvprod"></div>`;
  if(t=='pickup')return `<div class="pv-l">${esc(b.label||'')}<i>*</i></div><div id="pvpk">${b.opts.map(o=>`<label class="pv-o"><input type="radio" name="pvpk" ${PVP==o.id?'checked':''} onchange="PVP='${o.id}'">${esc(o.label)}</label>`).join('')}</div>`;
  if(t=='select')return `${L}<select><option>請選擇</option>${b.opts.map(o=>`<option>${esc(o)}</option>`).join('')}</select>`;
  if(t=='radio'||t=='checkbox'){const nm='pv'+b.id;return `${L}${b.opts.map(o=>`<label class="pv-o"><input type="${t}" name="${nm}">${esc(o)}</label>`).join('')}`}
@@ -944,24 +954,32 @@ const pvQty=p=>pvItems(p).reduce((a,x)=>a+(PVQ[x.k]||0),0),pvSum=p=>pvItems(p).r
 const pvImgs=p=>[p.img,...(p.imgs||[])].filter(Boolean);
 function pvTog(a,v){if(a=='c'){PVC=(v==null||PVC==v)?'':v}else{const i=PVW.indexOf(v);if(i>=0)PVW.splice(i,1);else PVW.push(v)}pvProd()}
 function pvCardAdd(id){const p=P(id);if(!p)return;const it=pvItems(p);if(it.length>1)return pvOpen(id);PVQ[it[0].k]=(PVQ[it[0].k]||0)+1;pvProd()}
-function pvProd(){const el=$('#pvprod');if(!el||!PRC)return;const all=PRC.pids.map(id=>P(id)).filter(p=>p&&inEv(p,S.cur)&&!p.off),ws=S.works.filter(w=>all.some(p=>p.work==w)),gs=S.groups.filter(g=>all.some(p=>p.group==g));
+function pvProd(){const el=$('#pvprod');if(!el||!PRC)return;const pb=PRC.blocks.find(b=>b.type=='products')||{};const all=PRC.pids.map(id=>P(id)).filter(p=>p&&inEv(p,S.cur)&&!p.off),ws=S.works.filter(w=>all.some(p=>p.work==w)),gs=S.groups.filter(g=>all.some(p=>p.group==g));
  PVW=PVW.filter(w=>ws.includes(w));if(PVC&&!gs.includes(PVC))PVC='';
  const ps=all.filter(p=>(!PVC||p.group==PVC)&&(!PVW.length||PVW.includes(p.work)));
  const rows=[];all.forEach(p=>{const vr=p.vars&&p.vars.length;pvItems(p).forEach(x=>{const q=PVQ[x.k]||0;if(q)rows.push({n:vr?p.name+'・'+x.name:p.name,q,s:q*x.price})})});
  el.innerHTML=(ws.length||gs.length?`<div class="pvf">${ws.length?`<div class="chips w">${ws.map(w=>`<button class="chip ${PVW.includes(w)?'on':''}" onclick="pvTog('w',S.works[${S.works.indexOf(w)}])">${esc(w)}</button>`).join('')}</div>`:''}${gs.length?`<div class="chips g"><button class="chip ${PVC?'':'on'}" onclick="pvTog('c',null)">全部</button>${gs.map(g=>`<button class="chip ${PVC==g?'on':''}" onclick="pvTog('c',S.groups[${S.groups.indexOf(g)}])">${esc(g)}</button>`).join('')}</div>`:''}</div>`:'')
+ +`<div class="pv-l">${esc(pb.label||'選擇商品')}<i>*</i></div>${pb.text?`<div class="pv-tx" style="margin-bottom:8px">${esc(pb.text)}</div>`:''}`
  +(ps.length?`<div class="grid pf-grid pv">${ps.map(p=>{const q=pvQty(p);return `<div class="card ${q?'in':''}" onclick="pvOpen(${p.id})"><div class="imw"><div class="im" style="${p.img?`background-image:url(${p.img})`:''}">${p.img?'':I.gift}</div></div><div class="nm">${esc(p.name)}</div><div class="pr">$ ${fmt2(p.price)}</div><div class="pvc-q" onclick="event.stopPropagation()"><button onclick="pvDec(${p.id})">−</button><b>${q}</b><button onclick="pvCardAdd(${p.id})">+</button></div></div>`}).join('')}</div>`:`<div class="empty">${all.length?'沒有符合的商品':'尚未開啟任何商品'}</div>`)
  +(rows.length?`<div class="pvs"><div class="pvs-h"><span>品項</span><span>數量</span><span>金額</span></div>${rows.map(r=>`<div class="pvs-r"><span style="word-break:break-all">${esc(r.n)}</span><span>${r.q}</span><span>$ ${r.s}</span></div>`).join('')}<div class="pf-hr" style="margin:10px 0"></div><div class="row"><b>總計</b><b style="font-size:18px">$ ${rows.reduce((a,r)=>a+r.s,0)}</b></div></div>`:'')}
 function pvDec(id){const p=P(id);if(!p)return;const it=pvItems(p).reverse().find(x=>PVQ[x.k]>0);if(it)PVQ[it.k]--;pvProd();if(PVD==id)pvDR()}
 function pvOpen(id){PVD=id;PVI=0;pvDR()}
 function pvDR(){const p=P(PVD);if(!p)return;let d=$('#pvd');if(!d){d=document.createElement('div');d.id='pvd';d.onclick=e=>{if(e.target===d)pvClose()};document.body.appendChild(d)}
  const im=pvImgs(p),its=pvItems(p);if(PVI>=im.length)PVI=0;
- d.innerHTML=`<div class="pvd-b"><button class="pvd-x" onclick="pvClose()">×</button><div class="pvd-im" style="${im.length?`background-image:url(${im[PVI]})`:''}" onclick="${im.length?'pvZoom()':''}">${im.length?'':I.gift}</div>${im.length>1?`<div class="pvd-th">${im.map((u,i)=>`<i class="${i==PVI?'on':''}" style="background-image:url(${u})" onclick="PVI=${i};pvDR()"></i>`).join('')}</div>`:''}
+ d.innerHTML=`<div class="pvd-b"><button class="pvd-x" onclick="pvClose()">×</button><div class="pvd-im${im.length?'':' ph'}" id="pvim">${im.length?`<div class="pvd-trk" id="pvtrk" style="transform:translateX(-${PVI*100}%)">${im.map(u=>`<div class="pvd-s" style="background-image:url(${u})"></div>`).join('')}</div>`:I.gift}</div>${im.length>1?`<div class="pvd-th" id="pvth">${im.map((u,i)=>`<i class="${i==PVI?'on':''}" style="background-image:url(${u})" onclick="pvGo(${i})"></i>`).join('')}</div>`:''}
  <div class="pvd-in">${its.map((x,i)=>`<div class="pvd-r"><b class="pvd-n">${esc(x.name)}</b><b style="flex:none;font-size:18px">$ ${fmt2(x.price)}</b></div><div class="pvd-r" style="margin:6px 0 12px;align-items:center"><span class="pv-tx" style="flex:1;min-width:0">${i==0&&p.desc?esc(p.desc):''}</span><span class="pvd-q"><button onclick="pvDQ('${x.k}',-1)">−</button><b>${PVQ[x.k]||0}</b><button onclick="pvDQ('${x.k}',1)">+</button></span></div>`).join('')}
- <div class="pf-hr" style="margin:4px 0 12px"></div><div class="row"><b>小計</b><b style="font-size:18px">$ ${pvSum(p)}</b></div><button class="btn" style="width:100%;margin-top:16px" onclick="pvClose()">完成</button></div></div>`;d.classList.add('on')}
+ <div class="pf-hr" style="margin:4px 0 12px"></div><div class="row"><b>小計</b><b style="font-size:18px">$ ${pvSum(p)}</b></div><button class="btn" style="width:100%;margin-top:16px" onclick="pvClose()">完成</button></div></div>`;d.classList.add('on');pvSwipe()}
+function pvGo(i){const p=P(PVD);if(!p)return;const n=pvImgs(p).length;if(!n)return;PVI=Math.max(0,Math.min(n-1,i));const k=$('#pvtrk');if(k){k.style.transition='';k.style.transform=`translateX(-${PVI*100}%)`}document.querySelectorAll('#pvth i').forEach((e,j)=>e.classList.toggle('on',j==PVI))}
+let PVMV=0;
+function pvSwipe(){const el=$('#pvim'),k=$('#pvtrk');if(!el||!k)return;let x0=null,dx=0,w=1;el.onclick=()=>{if(!PVMV)pvZoom()};
+ el.onpointerdown=e=>{x0=e.clientX;dx=0;PVMV=0;w=el.clientWidth||1;try{el.setPointerCapture(e.pointerId)}catch(_){}};
+ el.onpointermove=e=>{if(x0==null)return;dx=e.clientX-x0;if(Math.abs(dx)>6)PVMV=1;if(PVMV){k.style.transition='none';k.style.transform=`translateX(calc(-${PVI*100}% + ${dx}px))`}};
+ const end=()=>{if(x0==null)return;const d=dx;x0=null;k.style.transition='';pvGo(Math.abs(d)>w*.15?PVI+(d<0?1:-1):PVI);setTimeout(()=>PVMV=0,60)};
+ el.onpointerup=end;el.onpointercancel=end}
 function pvDQ(k,d){PVQ[k]=Math.max(0,(PVQ[k]||0)+d);pvDR();pvProd()}
 function pvClose(){const d=$('#pvd');if(d)d.classList.remove('on');PVD=null}
 function pvZoom(){const p=P(PVD);if(!p)return;const im=pvImgs(p);let z=$('#pvz');if(!z){z=document.createElement('div');z.id='pvz';z.onclick=()=>z.classList.remove('on');document.body.appendChild(z)}
- z.innerHTML=`<img src="${esc(im[PVI])}" alt="">${im.length>1?`<button class="pvz-a l" onclick="event.stopPropagation();PVI=(PVI+${im.length-1})%${im.length};pvDR();pvZoom()">‹</button><button class="pvz-a r" onclick="event.stopPropagation();PVI=(PVI+1)%${im.length};pvDR();pvZoom()">›</button>`:''}<span class="pvz-x">×</span>`;z.classList.add('on')}
+ z.innerHTML=`<img src="${esc(im[PVI])}" alt="">${im.length>1?`<button class="pvz-a l" onclick="event.stopPropagation();PVI=(PVI+${im.length-1})%${im.length};pvGo(PVI);pvZoom()">‹</button><button class="pvz-a r" onclick="event.stopPropagation();PVI=(PVI+1)%${im.length};pvGo(PVI);pvZoom()">›</button>`:''}<span class="pvz-x">×</span>`;z.classList.add('on')}
 function pfPreview(){PVQ={};PVP='onsite';PVC='';PVW=[];pvClose();TALL=1;ANI=1;openM(`<div class="sh row"><span style="width:56px"></span><b style="font-size:17px">預覽表單</b><button class="p2" onclick="closeM()">關閉</button></div><div class="sbody"><div class="pv"><div class="pv-t">${esc(PRC.title||'（尚未填寫標題）')}</div>${PRC.note?`<div class="pv-tx">${esc(PRC.note)}</div>`:''}${PRC.blocks.map(b=>`<div class="pv-b">${pvField(b)}</div>`).join('')}<div class="row" style="margin-top:18px"><button class="p2" onclick="pfTestM('pfPreview()')">寄送測試信</button><button class="pf-btn" disabled style="opacity:.4">送出預購</button></div><div class="cap" style="text-align:center">預覽模式，不會真的送出</div></div></div>`);pvProd()}
 function pfApply(){PRC.blocks.forEach(b=>{if(['select','radio','checkbox'].includes(b.type)&&!Array.isArray(b.opts))b.opts=['選項 1','選項 2'];if(b.id==null)b.id=uid()});PRC.days=Math.max(1,Math.round(+PRC.days)||3);['title','note','bank','shop','api','sender'].forEach(k=>PRC[k]=String(PRC[k]||'').trim());
  Object.assign(S.pre,{ts:Date.now(),ev:S.cur,pids:PRC.pids.filter(id=>{const p=P(id);return p&&inEv(p,S.cur)}),title:PRC.title,note:PRC.note,bank:PRC.bank,days:PRC.days,shop:PRC.shop,api:PRC.api,sender:PRC.sender,deadline:PRC.deadline||'',blocks:JSON.parse(JSON.stringify(PRC.blocks))});S.pre.formUrl=pfLink();PRC.pids=[...S.pre.pids];PRC0=JSON.stringify(PRC)}
@@ -976,7 +994,7 @@ async function pfClose(){const dirty=JSON.stringify(PRC)!==PRC0;if(dirty&&!await
 const TPL_INFO={copy:['填單副本','填單後自動寄出（客人填寫的內容）'],confirm:['訂單確認信','填單後自動寄出（含匯款資訊、回報連結、場取編號）'],remind:['匯款提醒信','訂單詳情按鈕寄出（場取・尚未匯款）'],store:['賣場連結信','訂單詳情按鈕寄出（通販）']};
 const TPL_VARS=['{暱稱}','{訂單編號}','{商品清單}','{總額}','{取貨方式}','{期限}','{匯款資訊}','{回報連結}','{賣場連結}','{填寫內容}','{店名}'];
 function tplM(fm){TPD=null;ANI=1;TALL=1;const back=fm?'pfMenu()':'closeM()';
- openM(`<div class="sh row"><button class="p2" onclick="${back}">${fm?'返回':'關閉'}</button><b style="font-size:17px">信件模板</b><span style="width:56px"></span></div><div class="sbody"><div class="cap" style="margin:0 0 10px">點選模板即可編輯與預覽。</div><div class="grp">${Object.keys(TPL_INFO).map(k=>`<div class="li" onclick="tplOpen('${k}',${fm?1:0})"><span style="min-width:0;flex:1"><b>${TPL_INFO[k][0]}</b><div class="sub" style="margin:2px 0 0">${TPL_INFO[k][1]}</div><div class="sub" style="margin:2px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:62vw">${esc(S.pre.tpl[k].s)}</div></span>${I.chev}</div>`).join('')}</div><div class="grp" style="margin-top:12px"><div class="li" onclick="mailCfgM(${fm?1:0})"><span class="rw">寄信資訊（匯款資訊、期限、賣場連結…）</span>${I.chev}</div></div></div>`)}
+ openM(`<div class="sh row"><button class="p2" onclick="${back}">${fm?'返回':'關閉'}</button><b style="font-size:17px">信件模板</b><span style="width:56px"></span></div><div class="sbody"><div class="cap" style="margin:0 0 10px">點選模板即可編輯與預覽。</div><div class="grp">${Object.keys(TPL_INFO).map(k=>`<div class="li" onclick="tplOpen('${k}',${fm?1:0})"><span style="min-width:0;flex:1"><b>${TPL_INFO[k][0]}</b><div class="sub" style="margin:2px 0 0">${TPL_INFO[k][1]}</div><div class="sub" style="margin:2px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:62vw">${esc(S.pre.tpl[k].s)}</div></span>${I.chev}</div>`).join('')}</div><div class="grp" style="margin-top:12px"><div class="li" onclick="mailInfoM(${fm?1:0})"><span class="rw">匯款資訊與賣場連結</span>${I.chev}</div></div></div>`)}
 function tplOpen(k,fm){TPD={k,fm,s:S.pre.tpl[k].s,b:S.pre.tpl[k].b,v:0,s0:S.pre.tpl[k].s,b0:S.pre.tpl[k].b};tplR()}
 function tplFill(s,md){const d=new Date(Date.now()+(Math.max(1,+pfv('days')||3))*864e5),m={'{暱稱}':'小明','{訂單編號}':'0123','{商品清單}':'・商品 A ×2　$300\n・商品 B ×1　$150','{總額}':'$450','{取貨方式}':md=='ship'?'通販（賣場下單）':'現場取貨','{期限}':d.getFullYear()+'/'+(d.getMonth()+1)+'/'+d.getDate(),'{匯款資訊}':pfv('bank')||'（尚未填寫匯款資訊）','{回報連結}':'https://（匯款回報頁面）','{賣場連結}':pfv('shop')||'https://（賣場連結）','{店名}':pfv('sender')||pfv('title')||'店名','{填寫內容}':'・商品：商品 A ×2、商品 B ×1\n・領取方式：現場取貨\n・暱稱：小明\n・社群網址：https://example.com\n・Email：test@example.com'};if(md=='ship'){m['{匯款資訊}']='';m['{期限}']='';m['{回報連結}']=''}else if(md=='onsite')m['{賣場連結}']='';return s.replace(/\{[^}]+\}/g,x=>x in m?m[x]:x)}
 function tplR(){const d=TPD,i=TPL_INFO[d.k];ANI=0;TALL=1;
@@ -1041,7 +1059,7 @@ ${S.rules.full.map((r,i)=>`<div class="li" onclick="ruleEd('full',${i})"><span>�
 ${S.rules.buy.map((r,i)=>`<div class="li" onclick="ruleEd('buy',${i})"><span>${bLabel(r)?'買 '+esc(bLabel(r)):'任一消費'}　${esc(giftName(r))}</span>${I.chev}</div>`).join('')}</div>
 <div class="sec">預購</div><div class="grp">
 <div class="li"><span class="rw">自動預購功能</span>${tgl(S.pre.auto,'preTog()')}</div>
-${S.pre.auto?`<div id="pfw"><div class="sw evr" style="margin:0 -16px"><button class="del" style="background:var(--ac)" onclick="pfToggle()">${S.pre.open?'暫停':'啟用'}</button><div class="in" style="padding:13px 16px" onclick="pfEdit()"><div class="row"><span>預購表單</span>${I.chev}</div></div></div></div>`+rowN('信件模板','tplM()')+rowN('新增測試訂單（預購＋通販各一筆）','addTestOrders()'):''}
+${S.pre.auto?`<div id="pfw"><div class="sw evr" style="margin:0 -16px"><button class="del" style="background:var(--ac)" onclick="pfToggle()">${S.pre.open?'暫停':'啟用'}</button><div class="in" style="padding:13px 16px" onclick="pfEdit()"><div class="row"><span>預購表單</span>${I.chev}</div></div></div></div>`+rowN('信件模板','tplM()')+rowN('寄信設定','mailCfgM()')+rowN('新增測試訂單（預購＋通販各一筆）','addTestOrders()'):''}
 </div><div class="cap">${S.pre.auto?'訂單頁會分成「現場」與「通販」，並接收預購表單的訂單。':'開啟後，訂單頁會分成「現場」與「通販」，並可使用預購表單。'}</div>
 <div class="sec">一般</div><div class="grp">${rowC('palette','#5b5bd6','設定顏色','colorM()','<i style="width:26px;height:26px;border-radius:50%;background:var(--g);display:block"></i>')}</div>
 <div class="sec">資料匯入／匯出</div><div class="grp">
